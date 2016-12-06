@@ -1,0 +1,188 @@
+<!DOCTYPE HTML>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Expression Generator</title>
+  <meta name="description" content="A script for generating expressions">
+  <meta name="author" content="Daniel Shepsis">
+</head>
+<style>
+body {
+  background-color: #eee;
+  margin-left:10%;
+  margin-top: 5%;
+}
+* {
+  font-family: sans-serif;
+  font-size: 20px;
+  color: #333;
+}
+.output {
+  border: 1px dashed #555;
+  background-color: #ddd;
+  padding: .5em;
+  margin-right: 10px;
+  display:none;
+}
+
+textarea {
+  vertical-align: top;
+  font-family: monospace;
+}
+
+/*Expanding Div styling:*/
+.expanding {
+  border: 1px solid indigo;
+  padding: .5em;
+  display: table;
+  margin: 15px 0px;
+  background-color: #eae7ee;
+  color: white;
+}
+.expanding p {
+  margin-top: 5px;
+  margin-bottom: 0px;
+}
+.expanding-title {
+  color: blue;
+  font-size: 1.1em;
+}
+.expanding-title::selection {
+  background:transparent;
+}
+.expanding-title:hover {
+  color: purple;
+}
+</style>
+
+<body>
+  <h1>
+    Minimum Spanning Tree Generator
+  </h1>
+  <p>
+    This is a test-data generator for algorithms which determine the MST of weighted, undirected graphs.
+  </p>
+  <p>
+    Just choose a number of nodes and click "Generate" at the bottom.
+    <br />
+    Click on "Advanced" for formatting settings.
+  </p>
+  <p>
+    Note: just click on the output to highlight it. Then, press ctrl+c to copy it.
+  </p>
+  <p>
+    Number of Nodes (between 1 and 100): <input type="number" id="numNodes" min="1" max="100" value="5">
+  </p>
+  <div class="expanding">
+    <a class="expanding-title" onclick="toggleDisplay(this.parentElement.querySelector('.expanding-body'));">Advanced</a>
+    <div class="expanding-body" style="display:none;">
+      <p>
+        Coming feature! Sorry!
+      </p>
+      <!--<p>
+        Frequency of Parentheses:
+        <button type="button" onclick="this.parentNode.querySelector('#parenFreq').value='0';">0</button>
+        <input type="range" id="parenFreq" min="0" max="100" value="30" />
+        <button type="button" onclick="this.parentNode.querySelector('#parenFreq').value='100';">100</button>
+      </p>
+      <p>
+        Variable Data: <textarea id="varData" rows="10" cols="50" onchange="varDataChanged=true;" placeholder="myScalar 13 //Scalar variable
+myArray 5 (1,17) (3,19) //Array variable
+//arrayName length (index, value)
+
+//Note that array variables cannot be
+//evaluated, so comment them out to
+//check the answer."></textarea>
+      </p>-->
+    </div>
+  </div>
+
+  <button type="button" onclick="genGraph();">Generate</button>
+  <pre class="output" id="graphOutput" onclick="copyToClipBoard(this)"></pre>
+  <pre class="output" id="graphMST"></pre>
+
+<script>
+  var error_message = "";
+
+  //Toggles the parameter element's style.display property between "none" and
+  //"block"
+  function toggleDisplay(elem) {
+    if (elem.style.display === "none") elem.style.display = "block";
+    else elem.style.display = "none";
+  }
+  //Copy contents of output box
+  function copyToClipBoard(elem){
+    //var elem = document.getElementById("utput");
+    var range = document.createRange();
+    range.selectNodeContents(elem);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+
+  //Returns a random integer between min and max (inclusive)
+  function randInt (min, max) {
+    return Math.floor((max+1-min)*Math.random()+min);
+  }
+
+  /* Prototype Constructor for an Adjacency Matrix represented by a triangular
+   * matrix. The triangular matrix is directly represented by an array.
+   * This is to be used for undirected graphs. */
+  function AdjMat (numNodes) {
+    this.sideLength = numNodes;
+    this.arr = [];
+    this.arr.length = numNodes*(numNodes-1)/2; /* Triangular matrix length */
+    this.get = function(row, col) {
+      if (row == col) {
+        error_message = "Triangular Matrix Access Error: Node-Self Connections are not defined!";
+        return undefined; /* Self-loops not allowed */
+      }
+      if (row > col) { /* Swap them, mapping the bottom triangle to the top */
+        var tmp = row;
+        row = col;
+        col = tmp;
+      }
+      /* Behold: The formula for converting a matrix coordinate into the
+       * triangular array coordinate: */
+      return arr[row*sideLength+col - (row+1)*(row+2)/2];
+    };
+    this.set = function(row, col, value) {
+      if (row == col) {
+        error_message = "Triangular Matrix Access Error: Node-Self Connections are not defined!";
+        return;
+      }
+      if (row > col) { /* Swap them, mapping the bottom triangle to the top */
+        var tmp = row;
+        row = col;
+        col = tmp;
+      }
+      arr[row*sideLength+col - (row+1)*(row+2)/2] = value;
+    };
+  }
+
+  /* Generates a random graph and its MST, then printing those to the two output
+   * <pre>s. */
+  function genGraph() {
+    var numNodes = (Number)document.getElementByID("numNodes").value;
+
+    var nodes = new AdjMat(numNodes);
+
+    /* NOTE: Nodes are recognized by their 0-based index. The index values will
+     * later be converted into character labels during printing, but is only
+     * done then. */
+
+    /* Start by creating the Minimum Spanning Tree: */
+    var nodesInMST = []; /* Stores the nodes in the MST */
+    nodesInMST.length = numNodes;
+    nodesInMST[0] = 0 /* Start by adding first node */
+    for (var i = 0; i < numNodes; ++i) {
+
+    }
+  }
+
+</script>
+</body>
+</html>
