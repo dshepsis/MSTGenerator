@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
 
-  <title>Expression Generator</title>
-  <meta name="description" content="A script for generating expressions">
+  <title>MST Generator</title>
+  <meta name="description" content="A script for generating MST test-cases">
   <meta name="author" content="Daniel Shepsis">
 </head>
 <style>
@@ -166,7 +166,7 @@ myArray 5 (1,17) (3,19) //Array variable
   /* Generates a random graph and its MST, then printing those to the two output
    * <pre>s. */
   function genGraph() {
-    var numNodes = (Number)document.getElementByID("numNodes").value;
+    var numNodes = Number(document.getElementById("numNodes").value);
 
     var nodes = new AdjMat(numNodes);
 
