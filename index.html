@@ -25,6 +25,9 @@ body {
   padding: .5em;
   margin-right: 10px;
   display:none;
+  max-height: 20em;
+  overflow-y: auto;
+  vertical-align: top;
 }
 
 textarea {
@@ -100,8 +103,10 @@ myArray 5 (1,17) (3,19) //Array variable
   </div>
 
   <button type="button" onclick="genGraph();">Generate</button>
-  <pre class="output" id="graphOutput" onclick="copyToClipBoard(this)"></pre>
-  <pre class="output" id="graphMST"></pre>
+  <div>
+    <pre class="output" id="graphOutput" onclick="copyToClipBoard(this)"></pre>
+    <pre class="output" id="graphMST"></pre>
+  </div>
 
 <script>
   'use strict';
@@ -123,6 +128,15 @@ myArray 5 (1,17) (3,19) //Array variable
     selection.addRange(range);
   }
 
+  /* Produces a string vertex label based on its index (>=0): */
+  function intToLabel(index) {
+    var label = "";
+    index = Math.floor(index);
+    for (; index >= 0; index = Math.floor(index/26)-1) {
+      label = String.fromCharCode(index%26+65) + label;
+    }
+    return label;
+  }
 
   //Returns a random integer between min and max (inclusive)
   function randInt (min, max) {
@@ -183,7 +197,7 @@ myArray 5 (1,17) (3,19) //Array variable
       }
       this.arr[row*this.sideLength+col - (row+1)*(row+2)/2] = value;
     };
-    this.toString = function() {
+    this.toString = function() { //WARNING: Very slow! Avoid using in a loop.
       if (this.sideLength <= 0) return "[]";
       if (this.sideLength === 1) return "[X]";
       var colWidth = log10Floor((this.sideLength-1)*this.sideLength/2) + 1;
@@ -227,10 +241,11 @@ myArray 5 (1,17) (3,19) //Array variable
 
   /* Prototype for Tree which will represent the MST. This is optomized for the
    * task of finding the path between two nodes: */
-  function Node (parent, weightToParent) {
+  function Node (parent, weightToParent, index) {
     this.parent = parent; //Reference to parent node
     /* The weight of the edge connecting this node to its parent: */
     this.weightToParent = weightToParent;
+    this.index = index; //The index/label associated with this vertex
     this.depth = 0; //How many layers down in the tree is this node? 0 is root.
     this.children = []; //List of children of this node
     if (this.parent !== null) { //If parent isn't null
@@ -278,6 +293,9 @@ myArray 5 (1,17) (3,19) //Array variable
 
     /* Start by creating the Minimum Spanning Tree: */
     var mstNodes = []; //An array storing all the nodes in the Min-Spanning Tree
+    /* An Attay storing all of the -edges- in the tree. Only used for
+     * printing later on: */
+    var mstEdges = [];
     mstNodes[0] = new Node(null, 0); //The root of the tree has a null parent
     /* The weight is randomly decided by choosing a random value within the
     * bounds. The lower bound is 1, and the upper bound is the maximum possible
@@ -291,10 +309,12 @@ myArray 5 (1,17) (3,19) //Array variable
       var randOrigin = Math.floor(Math.random()*i); //A random node in the MST
       /* The ith vertex corresponds to a node with a random parent and a random
        * weight along the edge between it and that parent: */
-      mstNodes[i] = new Node (mstNodes[randOrigin], weight);
+      mstNodes[i] = new Node (mstNodes[randOrigin], weight, i);
+      mstEdges[i-1] = {node1: randOrigin, node2: i, weight: weight};
       graph.set(randOrigin, i, weight); /* Add edge to adjacency matrix: */
     }
-    console.log(graph.toString());
+    console.log(mstEdges);
+    //console.log(graph.toString());
     /* Traversal of the upper-triangle of the graph: */
     for (var r = 0; r < numNodes; ++r) {
       for (var c = r + 1; c < numNodes; ++c) {
@@ -307,7 +327,39 @@ myArray 5 (1,17) (3,19) //Array variable
         graph.set(r, c, weight);
       }
     }
-    console.log(graph.toString());
+    //console.log(graph.toString());
+
+    /* Commence production of result strings: */
+    var graphFile = String(numNodes) ;
+    for (var i = 0; i < numNodes; ++i) {
+      graphFile += "\n" + intToLabel(i);
+    }
+    for (var r = 0; r < numNodes; ++r) {
+      for (var c = r + 1; c < numNodes; ++c) {
+        graphFile += "\n" + intToLabel(r) + " ";
+        graphFile += intToLabel(c) + " ";
+        graphFile += graph.get(r, c);
+      }
+    }
+    var graphBox = document.getElementById("graphOutput");
+    graphBox.innerHTML = graphFile;
+    graphBox.style.display = "inline-block";
+
+    var mstString = "[";
+    console.log(mstEdges);
+    if (mstEdges.length > 0) {
+      var edge = mstEdges[0];
+      console.log(edge);
+      mstString += "(" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
+      for (var n = 1, len = mstEdges.length; n < len; ++n) {
+        edge = mstEdges[n];
+        mstString += ", (" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
+      }
+    }
+    mstString += "]";
+    var mstBox = document.getElementById("graphMST");
+    mstBox.innerHTML = mstString;
+    mstBox.style.display = "inline-block";
   }
 
 </script>
