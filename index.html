@@ -129,6 +129,23 @@ myArray 5 (1,17) (3,19) //Array variable
     return Math.floor((max+1-min)*Math.random()+min);
   }
 
+  function padLeft (string, len, padChar) {
+    if (len < string.length) {
+      return string.substr(0,len);
+    }
+    padChar = (padChar === undefined) ? " " : padChar;
+    padChar = String(padChar).charAt(0);
+
+    return new Array(len-String(string).length + 1).join(padChar) + string;
+  }
+
+  /* Returns the floor of the base-10 logarithm of x */
+  function log10Floor(x) {
+    var l = 0;
+    for (;x >= 10; x /= 10, ++l);
+    return l;
+  }
+
   /* Prototype Constructor for an Adjacency Matrix represented by a triangular
    * matrix. The triangular matrix is directly represented by an array.
    * This is to be used for undirected graphs. */
@@ -169,57 +186,41 @@ myArray 5 (1,17) (3,19) //Array variable
     this.toString = function() {
       if (this.sideLength <= 0) return "[]";
       if (this.sideLength === 1) return "[X]";
+      var colWidth = log10Floor((this.sideLength-1)*this.sideLength/2) + 1;
       /* Start by writing out the first line: */
-      var pendingRet = "⎡ X";
+      var pendingRet = "⎡" + padLeft("X", colWidth);
       for (var c = 1; c < this.sideLength; ++c) {
-        pendingRet += ", ";
-        var num = this.get(0,c);
-        if (num < 10) { // So that all number are represented as 2 wide:
-          pendingRet += " ";
-        }
-        pendingRet += num;
+        pendingRet += ",";
+        pendingRet += padLeft(this.get(0,c), colWidth);
       }
       pendingRet += "⎤\n";
 
       /* Now print all but the last line of the graph: */
       for (var r = 1; r < this.sideLength-1; ++r) {
         pendingRet += "⎢"; //Opening bracket extension for row
-        var num = this.get(r, 0);
-        if (num < 10) { // So that all number are represented as 2 wide:
-          pendingRet += " ";
-        }
-        pendingRet += num;
+        pendingRet += padLeft(this.get(r,0), colWidth);
+
         for (var c = 1; c < this.sideLength; ++c) {
-          pendingRet += ", ";
+          pendingRet += ",";
           if (r === c) { //Skip over the diagonal
-            pendingRet += " X";
+            pendingRet += padLeft("X", colWidth);
             continue;
           }
-          num = this.get(r, c);
-          if (num < 10) { // So that all number are represented as 2 wide:
-            pendingRet += " ";
-          }
-          pendingRet += num;
+          pendingRet += padLeft(this.get(r,c), colWidth);
         }
         pendingRet += "⎥\n";
       }
 
       /* Now, finish up with the last row: */
       pendingRet += "⎣";
-      var num = this.get(this.sideLength-1, 0);
-      if (num < 10) { // So that all number are represented as 2 wide:
-        pendingRet += " ";
-      }
-      pendingRet += num;
+      pendingRet += padLeft(this.get(this.sideLength-1,0), colWidth);
       for (var r = this.sideLength-1, c = 1; c < r; ++c) {
-        pendingRet += ", ";
-        num = this.get(r,c);
-        if (num < 10) { // So that all number are represented as 2 wide:
-          pendingRet += " ";
-        }
-        pendingRet += num;
+        pendingRet += ",";
+        pendingRet += padLeft(this.get(r,c), colWidth);
       }
-      pendingRet += ",  X⎦";
+      pendingRet += ",";
+      pendingRet += padLeft("X", colWidth);
+      pendingRet += "⎦";
       return pendingRet;
     }
   }
