@@ -239,6 +239,31 @@ myArray 5 (1,17) (3,19) //Array variable
     }
   }
 
+  /* Returns the weight of the heaviest edge in the path between the two
+   * parameter nodes, assuming they are in a tree: */
+  function maxEdgeInPath(node1, node2) {
+    var greatest = 0; //The greatest weight seen so far
+    /* Choose the node deaper in the tree (greater depth) and find its parent
+     * until the two nodes have the same depth: */
+    for (var i = node1.depth - node2.depth; i > 0; --i) {
+      greatest = Math.max(greatest, node1.weightToParent);
+      node1 = node1.parent;
+    }
+    for (var i = node2.depth - node1.depth; i > 0; --i) {
+      greatest = Math.max(greatest, node2.weightToParent);
+      node2 = node2.parent;
+    }
+
+    /* Now, climb up on the tree until node1 and 2 reference the same node,
+     * That is, their lowest mutual ancestor: */
+    while (node1 !== node2) {
+      greatest = Math.max(greatest, node1.weightToParent, node2.weightToParent);
+      node1 = node1.parent;
+      node2 = node2.parent;
+    }
+    return greatest;
+  }
+
 
   /* Generates a random graph and its MST, then printing those to the two output
    * <pre>s. */
@@ -268,6 +293,19 @@ myArray 5 (1,17) (3,19) //Array variable
        * weight along the edge between it and that parent: */
       mstNodes[i] = new Node (mstNodes[randOrigin], weight);
       graph.set(randOrigin, i, weight); /* Add edge to adjacency matrix: */
+    }
+    console.log(graph.toString());
+    /* Traversal of the upper-triangle of the graph: */
+    for (var r = 0; r < numNodes; ++r) {
+      for (var c = r + 1; c < numNodes; ++c) {
+        /* If the edge was already set when building the MST: */
+        if (graph.get(r,c) !== 0) continue;
+
+        /* Generate a random weight between the maximum weight in the path
+         * between the two nodes and the maximum allowed node-weight: */
+        var weight = randInt(maxEdgeInPath(mstNodes[r], mstNodes[c]) + 1, randBound);
+        graph.set(r, c, weight);
+      }
     }
     console.log(graph.toString());
   }
