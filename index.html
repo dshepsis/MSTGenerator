@@ -104,6 +104,7 @@ myArray 5 (1,17) (3,19) //Array variable
   <pre class="output" id="graphMST"></pre>
 
 <script>
+  'use strict';
   var error_message = "";
 
   //Toggles the parameter element's style.display property between "none" and
@@ -134,7 +135,11 @@ myArray 5 (1,17) (3,19) //Array variable
   function AdjMat (numNodes) {
     this.sideLength = numNodes;
     this.arr = [];
-    this.arr.length = numNodes*(numNodes-1)/2; /* Triangular matrix length */
+    /* Pre-allocate array and fill with 0s: */
+    for (var i = 0, len = numNodes*(numNodes-1)/2; i < len; ++i) {
+      this.arr[i] = 0;
+    }
+
     this.get = function(row, col) {
       if (row == col) {
         error_message = "Triangular Matrix Access Error: Node-Self Connections are not defined!";
@@ -147,7 +152,7 @@ myArray 5 (1,17) (3,19) //Array variable
       }
       /* Behold: The formula for converting a matrix coordinate into the
        * triangular array coordinate: */
-      return arr[row*sideLength+col - (row+1)*(row+2)/2];
+      return this.arr[row*this.sideLength+col - (row+1)*(row+2)/2];
     };
     this.set = function(row, col, value) {
       if (row == col) {
@@ -159,28 +164,111 @@ myArray 5 (1,17) (3,19) //Array variable
         row = col;
         col = tmp;
       }
-      arr[row*sideLength+col - (row+1)*(row+2)/2] = value;
+      this.arr[row*this.sideLength+col - (row+1)*(row+2)/2] = value;
     };
+    this.toString = function() {
+      if (this.sideLength <= 0) return "[]";
+      if (this.sideLength === 1) return "[X]";
+      /* Start by writing out the first line: */
+      var pendingRet = "⎡ X";
+      for (var c = 1; c < this.sideLength; ++c) {
+        pendingRet += ", ";
+        var num = this.get(0,c);
+        if (num < 10) { // So that all number are represented as 2 wide:
+          pendingRet += " ";
+        }
+        pendingRet += num;
+      }
+      pendingRet += "⎤\n";
+
+      /* Now print all but the last line of the graph: */
+      for (var r = 1; r < this.sideLength-1; ++r) {
+        pendingRet += "⎢"; //Opening bracket extension for row
+        var num = this.get(r, 0);
+        if (num < 10) { // So that all number are represented as 2 wide:
+          pendingRet += " ";
+        }
+        pendingRet += num;
+        for (var c = 1; c < this.sideLength; ++c) {
+          pendingRet += ", ";
+          if (r === c) { //Skip over the diagonal
+            pendingRet += " X";
+            continue;
+          }
+          num = this.get(r, c);
+          if (num < 10) { // So that all number are represented as 2 wide:
+            pendingRet += " ";
+          }
+          pendingRet += num;
+        }
+        pendingRet += "⎥\n";
+      }
+
+      /* Now, finish up with the last row: */
+      pendingRet += "⎣";
+      var num = this.get(this.sideLength-1, 0);
+      if (num < 10) { // So that all number are represented as 2 wide:
+        pendingRet += " ";
+      }
+      pendingRet += num;
+      for (var r = this.sideLength-1, c = 1; c < r; ++c) {
+        pendingRet += ", ";
+        num = this.get(r,c);
+        if (num < 10) { // So that all number are represented as 2 wide:
+          pendingRet += " ";
+        }
+        pendingRet += num;
+      }
+      pendingRet += ",  X⎦";
+      return pendingRet;
+    }
   }
+
+  /* Prototype for Tree which will represent the MST. This is optomized for the
+   * task of finding the path between two nodes: */
+  function Node (parent, weightToParent) {
+    this.parent = parent; //Reference to parent node
+    /* The weight of the edge connecting this node to its parent: */
+    this.weightToParent = weightToParent;
+    this.depth = 0; //How many layers down in the tree is this node? 0 is root.
+    this.children = []; //List of children of this node
+    if (this.parent !== null) { //If parent isn't null
+      this.depth = this.parent.depth + 1;
+      this.parent.children.push(this); //Add this node to parent's children list
+    }
+  }
+
 
   /* Generates a random graph and its MST, then printing those to the two output
    * <pre>s. */
   function genGraph() {
     var numNodes = Number(document.getElementById("numNodes").value);
 
-    var nodes = new AdjMat(numNodes);
+    var graph = new AdjMat(numNodes); //The Adjacency matrix for the graph
 
     /* NOTE: Nodes are recognized by their 0-based index. The index values will
      * later be converted into character labels during printing, but is only
      * done then. */
 
     /* Start by creating the Minimum Spanning Tree: */
-    var nodesInMST = []; /* Stores the nodes in the MST */
-    nodesInMST.length = numNodes;
-    nodesInMST[0] = 0 /* Start by adding first node */
-    for (var i = 0; i < numNodes; ++i) {
+    var mstNodes = []; //An array storing all the nodes in the Min-Spanning Tree
+    mstNodes[0] = new Node(null, 0); //The root of the tree has a null parent
+    /* The weight is randomly decided by choosing a random value within the
+    * bounds. The lower bound is 1, and the upper bound is the maximum possible
+    * number of edges in the matrix n*(n-1)/2: */
+    var randBound = (numNodes-1)*numNodes/2;
 
+    /* Create a new Edge which starts at a randpm node in the MST and end
+    * with the next node which hasn't yet been included in the MST.*/
+    for (var i = 1; i < numNodes; ++i) {
+      var weight = randInt(1,randBound-1); //The weight of our new edge in the MST
+      var randOrigin = Math.floor(Math.random()*i); //A random node in the MST
+      /* The ith vertex corresponds to a node with a random parent and a random
+       * weight along the edge between it and that parent: */
+      mstNodes[i] = new Node (mstNodes[randOrigin], weight);
+      graph.set(randOrigin, i, weight); /* Add edge to adjacency matrix: */
     }
+    console.log(graph.toString());
   }
 
 </script>
