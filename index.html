@@ -283,6 +283,7 @@ myArray 5 (1,17) (3,19) //Array variable
   /* Generates a random graph and its MST, then printing those to the two output
    * <pre>s. */
   function genGraph() {
+    console.time("MST Setup");
     var numNodes = Number(document.getElementById("numNodes").value);
 
     var graph = new AdjMat(numNodes); //The Adjacency matrix for the graph
@@ -313,9 +314,10 @@ myArray 5 (1,17) (3,19) //Array variable
       mstEdges[i-1] = {node1: randOrigin, node2: i, weight: weight};
       graph.set(randOrigin, i, weight); /* Add edge to adjacency matrix: */
     }
-    console.log(mstEdges);
-    //console.log(graph.toString());
+    console.timeEnd("MST Setup");
+
     /* Traversal of the upper-triangle of the graph: */
+    console.time("Adding Edges");
     for (var r = 0; r < numNodes; ++r) {
       for (var c = r + 1; c < numNodes; ++c) {
         /* If the edge was already set when building the MST: */
@@ -327,8 +329,9 @@ myArray 5 (1,17) (3,19) //Array variable
         graph.set(r, c, weight);
       }
     }
-    //console.log(graph.toString());
+    console.timeEnd("Adding Edges");
 
+    console.time("Output");
     /* Commence production of result strings: */
     var graphFile = String(numNodes) ;
     for (var i = 0; i < numNodes; ++i) {
@@ -346,10 +349,8 @@ myArray 5 (1,17) (3,19) //Array variable
     graphBox.style.display = "inline-block";
 
     var mstString = "[";
-    console.log(mstEdges);
     if (mstEdges.length > 0) {
       var edge = mstEdges[0];
-      console.log(edge);
       mstString += "(" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
       for (var n = 1, len = mstEdges.length; n < len; ++n) {
         edge = mstEdges[n];
@@ -360,6 +361,7 @@ myArray 5 (1,17) (3,19) //Array variable
     var mstBox = document.getElementById("graphMST");
     mstBox.innerHTML = mstString;
     mstBox.style.display = "inline-block";
+    console.timeEnd("Output");
   }
 
 </script>
