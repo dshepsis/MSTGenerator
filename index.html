@@ -10,7 +10,7 @@
 </head>
 <style>
 body {
-  background-color: #eee;
+  background-color: #eeeef2;
   margin-left:10%;
   margin-top: 5%;
 }
@@ -80,13 +80,20 @@ textarea {
     This is a test-data generator for algorithms which determine the MST of weighted, undirected graphs.
   </p>
   <p>
-    Just choose a number of nodes and click "Generate" at the bottom.
-    <br />
+    Just choose a number of nodes and click "Generate" at the bottom. Then, click on the output to highlight it, and press ctrl+c to copy it.
+  </p>
+  <!--<p>
     Click on "Advanced" for formatting settings.
+  </p>-->
+  <p>
+    The MST output will appear in a separate box next-to or below the main output box. It lists the arcs/edges of the MST in the format "[(vertex1 vertex2 weight)]".
   </p>
   <p>
-    Note: just click on the output to highlight it. Then, press ctrl+c to copy it.
-  </p>
+    Things to note about the output:
+    <ul>
+      <li>The order the arcs are listed in does NOT matter. For example, [(A B 2), (B C 1), (C D 4)] is equivalent to [(C D 4), (A B 2), (B C 1)]</li>
+      <li>The order of vertices in an arc also doesn't matter. For example, (A D 3) is equivalent to (D A 3)</li>
+    </ul>
   <p>
     Number of Nodes (between 1 and 100): <input type="number" id="numNodes" min="1" max="100" value="5">
   </p>
@@ -96,21 +103,6 @@ textarea {
       <p>
         Coming feature! Sorry!
       </p>
-      <!--<p>
-        Frequency of Parentheses:
-        <button type="button" onclick="this.parentNode.querySelector('#parenFreq').value='0';">0</button>
-        <input type="range" id="parenFreq" min="0" max="100" value="30" />
-        <button type="button" onclick="this.parentNode.querySelector('#parenFreq').value='100';">100</button>
-      </p>
-      <p>
-        Variable Data: <textarea id="varData" rows="10" cols="50" onchange="varDataChanged=true;" placeholder="myScalar 13 //Scalar variable
-myArray 5 (1,17) (3,19) //Array variable
-//arrayName length (index, value)
-
-//Note that array variables cannot be
-//evaluated, so comment them out to
-//check the answer."></textarea>
-      </p>-->
     </div>
   </div>
 
