@@ -442,7 +442,7 @@ textarea#userMST {
     mstBox.innerHTML = mstString;
 
     document.getElementById("outputContainer").style.display = "block";
-    mstBox.parentElement.style.maxWidth = "calc(100% - " + graphBox.offsetWidth  + "px - 1vw)"
+    mstBox.parentElement.style.maxWidth = "calc(100% - " + (graphBox.parentElement.offsetWidth + 5)  + "px - 1vw)"
 
     if (error_message) console.log(error_message);
   }
