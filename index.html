@@ -18,6 +18,7 @@ body {
   font-family: sans-serif;
   font-size: 20px;
   color: #333;
+  box-sizing: border-box;
 }
 h1 {
   font-size: 2em;
@@ -30,20 +31,32 @@ pre {
   font-size: .3em;
 }
 
+.output-container {
+  max-width:100%;
+}
+.output-container > div {
+  display: inline-block;
+  vertical-align: top;
+}
 .output {
   border: 1px dashed #555;
   background-color: #ddd;
   padding: .5em;
   margin-right: 10px;
-  display:none;
-  max-height: 20em;
-  overflow-y: auto;
-  vertical-align: top
+  display:inline-block;
+  max-height: 15em;
+  max-width: 100%;
+  overflow: auto;
+  vertical-align: top;
+  margin-bottom: 0px;
 }
 
 textarea {
   vertical-align: top;
   font-family: monospace;
+}
+textarea#userMST {
+  width:100%;
 }
 
 /*Expanding Div styling:*/
@@ -107,14 +120,26 @@ textarea {
   </div>
 
   <button type="button" onclick="genGraph();">Generate</button>
-  <div>
-    <pre class="output" id="graphOutput" onclick="copyToClipBoard(this)"></pre>
-    <pre class="output" id="graphMST"></pre>
+  <div class="output-container" id="outputContainer" style="display:none;">
+    <div>
+      <pre class="output" id="graphOutput" onclick="copyToClipBoard(this)"></pre>
+    </div>
+    <div>
+      <pre class="output" id="graphMST"></pre>
+      <p>Paste your result MST in the box below to check if it matches the one above:</p>
+      <textarea id="userMST" oninput="checkMST();" onpropertychange="checkMST();"></textarea>
+
+      <p id="userMSTResult"></p>
+    </div>
   </div>
 
 <script>
   'use strict';
   var error_message = "";
+
+  /* This is used by the checkMST() method, because otherwise the mstEdges var
+   * would be garbage-collected at the end of resultsToUI()*/
+  var global_mstEdges;
 
   //Toggles the parameter element's style.display property between "none" and
   //"block"
@@ -122,6 +147,7 @@ textarea {
     if (elem.style.display === "none") elem.style.display = "block";
     else elem.style.display = "none";
   }
+
   //Copy contents of output box
   function copyToClipBoard(elem){
     //var elem = document.getElementById("utput");
@@ -132,6 +158,83 @@ textarea {
     selection.addRange(range);
   }
 
+  function checkMST() {
+    var userMST = document.getElementById("userMST").value;
+    var mstRegex = /\(([A-Z]+) ([A-Z]+) (\d+)\)/gi //For capturing arc data
+    var match = mstRegex.exec(userMST);
+
+    // If the user input didn't contain any arcs:
+    if (match === null) {
+      var outputBox = document.getElementById("userMSTResult");
+      var res = "";
+      if (userMST !== "") {
+        res = "Mistake: You didn't enter your arcs properly. ";
+        res += "Please enter them in the format seen above, e.g. (A B 2).";
+        res += "<br />Note that vertex order does NOT matter. See above for details.";
+      }
+      outputBox.innerHTML = res;
+      return;
+    }
+
+    /* The idea is to ensure all matches in userMST correspond to a single arc
+     * in global_mstEdges. We can avoid an O(n^2) linear search by noting that
+     * the arcs in global_mstEdges are sorted in descending order of the
+     * second vertices, due to how they are generated. We are ALSO guaranteed
+     * that the second vertex in each arc of global_mstEdges is greater than
+     * the first (in terms of the labelToInt() value). */
+    var arcsChecked = 0;
+    for (;match != null; match = mstRegex.exec(userMST)) {
+      /* Pick the large index between those corresponding to the first and
+       * second vertex labels. */
+      var vIndex1 = labelToInt(match[1]);
+      var vIndex2 = labelToInt(match[2]);
+      /* Error case: */
+      if (vIndex1 === vIndex2 ) {
+        error_message = "ERROR: Bad Input! Self Loop in MST at this arc: " + match[0];
+        return;
+      }
+      /* Otherwise, swap the two vIndex vars so that vIndex1 < vIndex2 */
+      if (vIndex1 > vIndex2 ) {
+        var temp = vIndex1;
+        vIndex1 = vIndex2;
+        vIndex2 = temp;
+      }
+      /* Remember, mstEdges is sorted by the SECOND vertex
+       * which is the GREATER one: */
+      var myEdge = global_mstEdges[vIndex2-1];
+      /* If the user edge matches our answer, check the next one: */
+      if (myEdge.node1 === vIndex1 &&
+          myEdge.node2 === vIndex2 &&
+          myEdge.weight === Number(match[3])) {
+        ++arcsChecked;
+        continue;
+      }
+      /* Otherwise, give an error and quit. */
+      var outputBox = document.getElementById("userMSTResult");
+      var res = "Mistake: You gave arc " + match[0];
+      res += " but the correct MST actually contains ("
+      res += intToLabel(myEdge.node1) + " " + intToLabel(myEdge.node2) + " ";
+      res += myEdge.weight + ")."
+      outputBox.innerHTML = res;
+      return;
+    }
+    /* If we exited the loop normally, then all edges the user inputed were
+     * correct and so part of the MST. However, they may not have inputed enough
+     * (or any) edges. Here we check for that: */
+    var outputBox = document.getElementById("userMSTResult");
+    var res;
+    if (arcsChecked < global_mstEdges.length) {
+      res = "Mistake: You didn't supply enough arcs, though the ones you did supply are correct.";
+    }
+    else if (arcsChecked > global_mstEdges.length) {
+      res = "Mistake: You listed some arcs more than once, though they were all correct";
+    }
+    else {
+      res = "Congratulations! Your MST is correct!";
+    }
+    outputBox.innerHTML = res;
+  }
+
   /* Produces a string vertex label based on its index (>=0): */
   function intToLabel(index) {
     var label = "";
@@ -140,6 +243,16 @@ textarea {
       label = String.fromCharCode(index%26+65) + label;
     }
     return label;
+  }
+
+  /* Produces the integer corresponding to the given label string. Note that
+   * labelToInt(intToLabel(i)) === i for all integers i less than 2^54 or so. */
+  function labelToInt(label) {
+    var total = label.charCodeAt(label.length-1)-65;
+    for (var i = label.length-2, factor = 26; i >= 0; --i, factor *= 26) {
+      total += (label.charCodeAt(i)-65 + 1)*factor;
+    }
+    return total;
   }
 
   //Returns a random integer between min and max (inclusive)
@@ -283,6 +396,47 @@ textarea {
     return greatest;
   }
 
+  function resultsToUI(graph, mstEdges) {
+    /* Start by clearing out the results checker: */
+    document.getElementById("userMST").value = "";
+    document.getElementById("userMSTResult").innerHTML = "";
+
+    /* Then do the rest of the output formatting: */
+    var numNodes = graph.sideLength;
+    /* Commence production of result strings: */
+    var graphFile = String(numNodes) ;
+    for (var i = 0; i < numNodes; ++i) {
+      graphFile += "\n" + intToLabel(i);
+    }
+    for (var r = 0; r < numNodes; ++r) {
+      for (var c = r + 1; c < numNodes; ++c) {
+        graphFile += "\n" + intToLabel(r) + " ";
+        graphFile += intToLabel(c) + " ";
+        graphFile += graph.get(r, c);
+      }
+    }
+    var graphBox = document.getElementById("graphOutput");
+    graphBox.innerHTML = graphFile;
+
+    var mstString = "[";
+    if (mstEdges.length > 0) {
+      var edge = mstEdges[0];
+      mstString += "(" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
+      for (var n = 1, len = mstEdges.length; n < len; ++n) {
+        edge = mstEdges[n];
+        mstString += ", (" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
+      }
+    }
+    mstString += "]";
+    var mstBox = document.getElementById("graphMST");
+    mstBox.innerHTML = mstString;
+
+    document.getElementById("outputContainer").style.display = "block";
+    mstBox.parentElement.style.maxWidth = "calc(100% - " + graphBox.offsetWidth  + "px - 1vw)"
+
+    if (error_message) console.log(error_message);
+  }
+
 
   /* Generates a random graph and its MST, then printing those to the two output
    * <pre>s. */
@@ -300,6 +454,7 @@ textarea {
     var mstNodes = []; //An array storing all the nodes in the Min-Spanning Tree
     /* An Attay storing all of the -edges- in the tree. Only used for
      * printing later on: */
+    global_mstEdges = null;
     var mstEdges = [];
     mstNodes[0] = new Node(null, 0); //The root of the tree has a null parent
     /* The weight is randomly decided by choosing a random value within the
@@ -318,6 +473,7 @@ textarea {
       mstEdges[i-1] = {node1: randOrigin, node2: i, weight: weight};
       graph.set(randOrigin, i, weight); /* Add edge to adjacency matrix: */
     }
+    global_mstEdges = mstEdges;
     console.timeEnd("MST Setup");
 
     /* Traversal of the upper-triangle of the graph: */
@@ -335,36 +491,9 @@ textarea {
     }
     console.timeEnd("Adding Edges");
 
+    /* Print the results to the User Interface: */
     console.time("Output");
-    /* Commence production of result strings: */
-    var graphFile = String(numNodes) ;
-    for (var i = 0; i < numNodes; ++i) {
-      graphFile += "\n" + intToLabel(i);
-    }
-    for (var r = 0; r < numNodes; ++r) {
-      for (var c = r + 1; c < numNodes; ++c) {
-        graphFile += "\n" + intToLabel(r) + " ";
-        graphFile += intToLabel(c) + " ";
-        graphFile += graph.get(r, c);
-      }
-    }
-    var graphBox = document.getElementById("graphOutput");
-    graphBox.innerHTML = graphFile;
-    graphBox.style.display = "inline-block";
-
-    var mstString = "[";
-    if (mstEdges.length > 0) {
-      var edge = mstEdges[0];
-      mstString += "(" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
-      for (var n = 1, len = mstEdges.length; n < len; ++n) {
-        edge = mstEdges[n];
-        mstString += ", (" + intToLabel(edge.node1) + " " + intToLabel(edge.node2) + " " + edge.weight + ")";
-      }
-    }
-    mstString += "]";
-    var mstBox = document.getElementById("graphMST");
-    mstBox.innerHTML = mstString;
-    mstBox.style.display = "inline-block";
+    resultsToUI(graph, mstEdges);
     console.timeEnd("Output");
   }
 
