@@ -464,8 +464,8 @@ textarea#userMST {
     var mstNodes = []; //An array storing all the nodes in the Min-Spanning Tree
     /* An Attay storing all of the -edges- in the tree. Only used for
      * printing later on: */
-    global_mstEdges = null;
     var mstEdges = [];
+    global_mstEdges = null; /* Global version for answer checking later on */
     mstNodes[0] = new Node(null, 0); //The root of the tree has a null parent
     /* The weight is randomly decided by choosing a random value within the
     * bounds. The lower bound is 1, and the upper bound is the maximum possible
